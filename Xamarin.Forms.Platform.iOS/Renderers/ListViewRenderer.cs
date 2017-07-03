@@ -873,7 +873,7 @@ namespace Xamarin.Forms.Platform.iOS
 				PreserveActivityIndicatorState(cell);
 				return nativeCell;
 			}
-		
+
 			public override nfloat GetHeightForHeader(UITableView tableView, nint section)
 			{
 				if (List.IsGroupingEnabled)
@@ -891,21 +891,29 @@ namespace Xamarin.Forms.Platform.iOS
 
 			public override UIView GetViewForHeader(UITableView tableView, nint section)
 			{
-				if (List.IsGroupingEnabled && List.GroupHeaderTemplate != null)
-				{
-					var cell = TemplatedItemsView.TemplatedItems[(int)section];
-					if (cell.HasContextActions)
-						throw new NotSupportedException("Header cells do not support context actions");
+				UIView view = null;
 
-					var renderer = (CellRenderer)Internals.Registrar.Registered.GetHandler<IRegisterable>(cell.GetType());
-
-					var view = new HeaderWrapperView();
-					view.AddSubview(renderer.GetCell(cell, null, tableView));
-
+				if (!List.IsGroupingEnabled)
 					return view;
-				}
 
-				return null;
+				var cell = TemplatedItemsView.TemplatedItems[(int)section];
+				if (cell.HasContextActions)
+					throw new NotSupportedException("Header cells do not support context actions");
+
+				var renderer = (CellRenderer)Internals.Registrar.Registered.GetHandler<IRegisterable>(cell.GetType());
+				view = new HeaderWrapperView();
+				view.AddSubview(renderer.GetCell(cell, null, tableView));
+
+				return view;
+			}
+
+			public override void HeaderViewDisplayingEnded(UITableView tableView, UIView headerView, nint section)
+			{
+				if (!List.IsGroupingEnabled)
+					return;
+
+				var cell = TemplatedItemsView.TemplatedItems[(int)section];
+				cell.SendDisappearing();
 			}
 
 			public override nint NumberOfSections(UITableView tableView)
@@ -1015,18 +1023,6 @@ namespace Xamarin.Forms.Platform.iOS
 				return templatedItems.ShortNames.ToArray();
 			}
 
-			public override string TitleForHeader(UITableView tableView, nint section)
-			{
-				if (!List.IsGroupingEnabled)
-					return null;
-
-				var sl = GetSectionList((int)section);
-				sl.PropertyChanged -= OnSectionPropertyChanged;
-				sl.PropertyChanged += OnSectionPropertyChanged;
-
-				return sl.Name;
-			}
-
 			public void Cleanup()
 			{
 				_selectionFromNative = false;
@@ -1067,27 +1063,6 @@ namespace Xamarin.Forms.Platform.iOS
 				var templatedItems = GetTemplatedItemsListForPath(indexPath);
 				var cell = templatedItems[indexPath.Row];
 				return cell;
-			}
-
-			ITemplatedItemsList<Cell> GetSectionList(int section)
-			{
-				return (ITemplatedItemsList<Cell>)((IList)TemplatedItemsView.TemplatedItems)[section];
-			}
-
-			void OnSectionPropertyChanged(object sender, PropertyChangedEventArgs e)
-			{
-				var currentSelected = _uiTableView.IndexPathForSelectedRow;
-
-				var til = (TemplatedItemsList<ItemsView<Cell>, Cell>)sender;
-				var groupIndex = ((IList)TemplatedItemsView.TemplatedItems).IndexOf(til);
-				if (groupIndex == -1)
-				{
-					til.PropertyChanged -= OnSectionPropertyChanged;
-					return;
-				}
-
-				_uiTableView.ReloadSections(NSIndexSet.FromIndex(groupIndex), ReloadSectionsAnimation);
-				_uiTableView.SelectRow(currentSelected, false, UITableViewScrollPosition.None);
 			}
 
 			void OnShortNamesCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
