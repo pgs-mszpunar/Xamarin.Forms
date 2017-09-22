@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Reflection;
 using Xamarin.Forms.Internals;
 using Xamarin.Forms.Xaml.Internals;
 
@@ -45,7 +44,6 @@ namespace Xamarin.Forms.Xaml
 					return;
 				ApplyPropertiesVisitor.SetPropertyValue(source, propertyName, value, Context.RootElement, node, Context, node);
 			}
-
 		}
 
 		public void Visit(MarkupNode node, INode parentNode)
@@ -106,10 +104,23 @@ namespace Xamarin.Forms.Xaml
 			if (ApplyPropertiesVisitor.TryGetPropertyName(node, parentNode, out propertyName))
 			{
 				if ((propertyName.LocalName == "Resources" ||
-				     propertyName.LocalName.EndsWith(".Resources", StringComparison.Ordinal)) && value is ResourceDictionary)
+				     propertyName.LocalName == "MergedDictionaries" ||
+					 propertyName.LocalName.EndsWith(".Resources", StringComparison.Ordinal)) && value is ResourceDictionary)
 				{
 					var source = Values[parentNode];
 					ApplyPropertiesVisitor.SetPropertyValue(source, propertyName, value, Context.RootElement, node, Context, node);
+				}
+			}
+
+			//Add ResourceDictionary into MergedDictionaries
+			XmlName parentPropertyName;
+			if (parentNode is IListNode && ApplyPropertiesVisitor.TryGetPropertyName(parentNode, parentNode.Parent, out parentPropertyName))
+			{
+				if (parentPropertyName.LocalName == "MergedDictionaries")
+				{
+					var source = Values[parentNode.Parent];
+					node.Parent = node.Parent.Parent;
+					ApplyPropertiesVisitor.SetPropertyValue(source, parentPropertyName, value, Context.RootElement, node, Context, node);
 				}
 			}
 		}
