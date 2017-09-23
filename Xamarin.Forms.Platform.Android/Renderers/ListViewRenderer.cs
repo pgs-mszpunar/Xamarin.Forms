@@ -56,7 +56,6 @@ namespace Xamarin.Forms.Platform.Android
 				}
 
 				_headerView?.Dispose();
-				_headerView?.Child = null;
 				_headerView = null;
 
 				if (_footerRenderer != null)
@@ -67,7 +66,6 @@ namespace Xamarin.Forms.Platform.Android
 				}
 
 				_footerView?.Dispose();
-				_footerView?.Child = null;
 				_footerView = null;
 
 				if (_adapter != null)
