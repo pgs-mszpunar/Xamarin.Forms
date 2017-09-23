@@ -14,6 +14,7 @@ namespace Xamarin.Forms.Platform.Android
 	public class ListViewRenderer : ViewRenderer<ListView, AListView>, SwipeRefreshLayout.IOnRefreshListener
 	{
 		ListViewAdapter _adapter;
+		bool _disposed;
 		IVisualElementRenderer _headerRenderer;
 		IVisualElementRenderer _footerRenderer;
 		Container _headerView;
@@ -38,29 +39,35 @@ namespace Xamarin.Forms.Platform.Android
 
 		protected override void Dispose(bool disposing)
 		{
+			if (_disposed)
+			{
+				return;
+			}
+
+			_disposed = true;
+
 			if (disposing)
 			{
-				if (_headerView == null)
-					return;
-
 				if (_headerRenderer != null)
 				{
-					(_headerRenderer.View as ViewGroup)?.RemoveAllViews();
+					ClearRenderer(_headerRenderer.View);
 					_headerRenderer.Dispose();
 					_headerRenderer = null;
 				}
 
+				_headerView?.Dispose();
+				_headerView?.Child = null;
+				_headerView = null;
+
 				if (_footerRenderer != null)
 				{
-					(_footerRenderer.View as ViewGroup)?.RemoveAllViews();
+					ClearRenderer(_footerRenderer.View);
 					_footerRenderer.Dispose();
 					_footerRenderer = null;
 				}
 
-				_headerView.Dispose();
-				_headerView = null;
-
-				_footerView.Dispose();
+				_footerView?.Dispose();
+				_footerView?.Child = null;
 				_footerView = null;
 
 				if (_adapter != null)
@@ -141,7 +148,7 @@ namespace Xamarin.Forms.Platform.Android
 				nativeListView.Focusable = false;
 				nativeListView.DescendantFocusability = DescendantFocusability.AfterDescendants;
 				nativeListView.OnFocusChangeListener = this;
-				nativeListView.Adapter = _adapter = e.NewElement.IsGroupingEnabled && e.NewElement.OnThisPlatform ().IsFastScrollEnabled () ? new GroupedListViewAdapter (Context, nativeListView, e.NewElement) : new ListViewAdapter(Context, nativeListView, e.NewElement);
+				nativeListView.Adapter = _adapter = e.NewElement.IsGroupingEnabled && e.NewElement.OnThisPlatform().IsFastScrollEnabled() ? new GroupedListViewAdapter(Context, nativeListView, e.NewElement) : new ListViewAdapter(Context, nativeListView, e.NewElement);
 				_adapter.HeaderView = _headerView;
 				_adapter.FooterView = _footerView;
 				_adapter.IsAttachedToWindow = _isAttached;
@@ -151,7 +158,7 @@ namespace Xamarin.Forms.Platform.Android
 				UpdateIsSwipeToRefreshEnabled();
 				UpdateFastScrollEnabled();
 
-				
+
 			}
 		}
 
@@ -272,6 +279,23 @@ namespace Xamarin.Forms.Platform.Android
 				Control.SetSelectionFromTop(realPositionWithHeader, y);
 		}
 
+		void ClearRenderer(AView renderedView)
+		{
+			var element = (renderedView as IVisualElementRenderer)?.Element;
+			var view = element as View;
+			if (view != null)
+			{
+				var renderer = Platform.GetRenderer(view);
+				if (renderer == renderedView)
+					element.ClearValue(Platform.RendererProperty);
+				renderer?.Dispose();
+				renderer = null;
+			}
+			var layout = view as IVisualElementRenderer;
+			layout?.Dispose();
+			layout = null;
+		}
+
 		void UpdateFooter()
 		{
 			var footer = (VisualElement)Controller.FooterElement;
@@ -279,6 +303,7 @@ namespace Xamarin.Forms.Platform.Android
 			{
 				if (_footerView != null)
 					_footerView.Child = null;
+				ClearRenderer(_footerRenderer.View);
 				_footerRenderer.Dispose();
 				_footerRenderer = null;
 			}
@@ -305,6 +330,7 @@ namespace Xamarin.Forms.Platform.Android
 			{
 				if (_headerView != null)
 					_headerView.Child = null;
+				ClearRenderer(_headerRenderer.View);
 				_headerRenderer.Dispose();
 				_headerRenderer = null;
 			}
@@ -350,8 +376,9 @@ namespace Xamarin.Forms.Platform.Android
 
 		void UpdateFastScrollEnabled()
 		{
-			if (Control != null) {
-				Control.FastScrollEnabled = Element.OnThisPlatform ().IsFastScrollEnabled ();
+			if (Control != null)
+			{
+				Control.FastScrollEnabled = Element.OnThisPlatform().IsFastScrollEnabled();
 			}
 		}
 
