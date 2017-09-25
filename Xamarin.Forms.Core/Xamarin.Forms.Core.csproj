@@ -110,6 +110,7 @@
     <Compile Include="PlatformConfiguration\iOSSpecific\UIStatusBarAnimation.cs" />
     <Compile Include="PlatformConfiguration\iOSSpecific\UpdateMode.cs" />
     <Compile Include="PlatformConfiguration\iOSSpecific\VisualElement.cs" />
+    <Compile Include="PlatformConfiguration\WindowsSpecific\ListView.cs" />
     <Compile Include="PlatformConfiguration\WindowsSpecific\MasterDetailPage.cs" />
     <Compile Include="PlatformConfiguration\WindowsSpecific\CollapseStyle.cs" />
     <Compile Include="Configuration.cs" />
@@ -479,7 +480,5 @@
   </PropertyGroup>
   <ItemGroup />
   <ItemGroup />
-  <ItemGroup>
-    <Folder Include="Xaml\" />
-  </ItemGroup>
+  <ItemGroup />
 </Project>
